@@ -1,8 +1,9 @@
 import express from "express";
-// import cors from "cors";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import cors from "cors";
-import { traerLibros,traerUsuarios } from "./db.js";
+import { traerLibros,traerUsuarios,checkUsuario,registrarUsuario } from "./db.js";
 
 dotenv.config();
 
@@ -35,34 +36,71 @@ servidor.get("/api/libros", async (peticion,respuesta) => {
 
 
 servidor.post('/api/registro', async (peticion, respuesta) => {
-    const { name, email, password } = peticion.body;
   
     try {
-      // Verificar si el usuario ya existe
-      const userExists = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
-      if (userExists.rows.length > 0) {
-        return res.status(400).json({ message: 'El usuario ya existe' });
-      }
-  
-      // Hashear la contraseña antes de guardar
-      const hashedPassword = await bcrypt.hash(password, 10);
-  
-      // Insertar el nuevo usuario en la base de datos
-      const newUser = await pool.query(
-        'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *',
-        [name, email, hashedPassword]
-      );
-  
-      res.status(201).json({ message: 'Usuario registrado correctamente', user: newUser.rows[0] });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: 'Error al registrar usuario' });
+     
+        let usuarioExistente = await checkUsuario(peticion.body.email);
+        if (usuarioExistente.rows.length > 0) {
+            return respuesta.json({ message: 'El usuario ya existe' });
+        }
+    
+        
+        let hashedPassword = await bcrypt.hash(peticion.body.password, 10);
+    
+        let nuevoUsuario= await registrarUsuario(peticion.body.name,peticion.body.email,hashedPassword)
+    
+        respuesta.json({ message: 'Usuario registrado correctamente', user: nuevoUsuario.rows[0] });
+    }catch (error) {
+        respuesta.status(500)
+        respuesta.json({ error: 'Error al registrar usuario' });
     }
-  });
+});
 
 
 
+servidor.post('/api/login', async (peticion, respuesta) => {
+  
+    try {
+     
+        let usuarioExistente = await checkUsuario(peticion.body.email);
+        if (usuarioExistente.length === 0) {
+            return respuesta.json({ message: 'El usuario no existe' });
+        }
+    
+        let usuario = usuarioExistente[0];
+        
+        let passwordCorrecta = await bcrypt.compare(peticion.body.password, usuario.password);
+        if(!passwordCorrecta){
+            return respuesta.json({ message: "Contraseá incorrecta"})
+        }
+
+        let token = jwt.sign(
+            { id: usuario.id, email: usuario.email},
+            process.env.JWT_SECRET,
+            { expiresIn : "1h"}
+        );
+    
+        respuesta.json({message:"Sesión iniciada con éxito",token, user: { id: usuario.id, name: usuario.name, email:usuario.email}
+        });
+
+    }catch (error) {
+        respuesta.status(500)
+        respuesta.json({ error: 'Error al iniciar sesion' });
+    }
+});
+
+
+
+servidor.use((error,peticion,respuesta,siguiente) => {
+        respuesta.status(400);
+        respuesta.json({ error : "error en la petición" });
+})
+
+servidor.use((peticion,respuesta) => {
+        respuesta.status(404);
+        respuesta.json({ error : "error recurso no encontrado" });
+}) 
 
 servidor.listen(process.env.PORT, () => {
-    console.log("Servidor escuchando por el puerto 3000");
+        console.log("Servidor escuchando por el puerto 3000");
 });
