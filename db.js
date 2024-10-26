@@ -8,7 +8,8 @@ function conectar(){
         host : process.env.DB_HOST,
         database : process.env.DB_NAME,
         user : process.env.DB_USER,
-        password : process.env.DB_PASSWORD
+        password : process.env.DB_PASSWORD,
+        
     });
 }
 
@@ -20,9 +21,7 @@ export function traerUsuarios(){
         const conexion = conectar();
         
         try{
-            /*2. Ejecuta una consulta SQL SELECT * FROM tareas para obtener todos los registros de la tabla tareas.
-                 Utiliza await para esperar el resultado de la consulta, que devuelve un array de objetos representando cada tarea.
-            */
+            
             let usuarios = await conexion`SELECT * FROM usuarios`;
             
             conexion.end();
@@ -31,52 +30,72 @@ export function traerUsuarios(){
             console.log("se han traido los usuarios")
 
         }catch(error){
-            //5. Si ocurre un error, lo maneja con ko({ error: "error en la base de datos" }).
+            
             ko({ error: "error en la base de datos" });
         }
 
     });   
 }
 
-export function checkUsuario(){
+/* export function checkUsuario(email){
     return new Promise(async (ok,ko) => {
         const conexion = conectar();
         try{
            
-            let usuarioExistente = await conexion`SELECT * FROM usuarios WHERE email = {email}`;
-        
+            let usuarioExistente = await conexion`SELECT * FROM usuarios WHERE email = ${email}`;
+
             conexion.end();
-        
-            ok(usuarioExistente);
-        
+
+            if(usuarioExistente.length > 0) {
+                console.log("Usuario existente en la base de datos", usuarioExistente);
+                ok(usuarioExistente);
+            }else{
+                console.log("No se encontró ningún usuario con el email:", email);
+                return [];
+            }
+         
 
         }catch(error){
-            //5. Si ocurre un error, lo maneja con ko({ error: "error en la base de datos" }).
+           console.error("Error en la verificacion del usuario", error);
             ko({ error: "error en la base de datos" });
         }
 
     });   
+} */
+
+export async function checkUsuario(email) {
+    const conexion = conectar();
+    try {
+            console.log("Consultando usuario con email:", email);
+            let usuarioExistente = await conexion`SELECT * FROM usuarios WHERE email = ${email}`;
+            console.log("Resultado de consulta en checkUsuario:", usuarioExistente);
+            return usuarioExistente;
+    } catch (error) {
+            console.error("Error en la verificación del usuario:", error);
+            throw new Error("Error en la base de datos");
+    } finally {
+            conexion.end(); 
+    }
 }
+    
 
 
-export function registrarUsuario({name,email,hashedPassword}){
+export function registrarUsuario(nombre,email,hashedPassword){
     return new Promise(async (ok,ko) => {
         
         const conexion = conectar();
-        //Una vez hace la conexión, intenta buscar las tareas, si las encuentra las mostrará
+        
         try{
-            /*2. Ejecuta una consulta SQL SELECT * FROM tareas para obtener todos los registros de la tabla tareas.
-                 Utiliza await para esperar el resultado de la consulta, que devuelve un array de objetos representando cada tarea.
-            */
-            let [{id}] = await conexion`INSERT INTO users (name, email, password) VALUES (${name},${email},${hashedPassword}) RETURNING *`;
+            
+            let [{id}] = await conexion`INSERT INTO usuarios (name, email, password) VALUES (${nombre},${email},${hashedPassword}) RETURNING id`;
             
             conexion.end();
         
             ok(id);
-            console.log("se han traido los libros")
+            console.log("Usuario Registrado")
 
         }catch(error){
-            //5. Si ocurre un error, lo maneja con ko({ error: "error en la base de datos" }).
+
             ko({ error: "error en la base de datos" });
         }
 
@@ -88,11 +107,9 @@ export function traerLibros(){
     return new Promise(async (ok,ko) => {
         
         const conexion = conectar();
-        //Una vez hace la conexión, intenta buscar las tareas, si las encuentra las mostrará
+       
         try{
-            /*2. Ejecuta una consulta SQL SELECT * FROM tareas para obtener todos los registros de la tabla tareas.
-                 Utiliza await para esperar el resultado de la consulta, que devuelve un array de objetos representando cada tarea.
-            */
+            
             let libros = await conexion`SELECT * FROM libros`;
             
             conexion.end();
@@ -101,7 +118,6 @@ export function traerLibros(){
             console.log("se han traido los libros")
 
         }catch(error){
-            //5. Si ocurre un error, lo maneja con ko({ error: "error en la base de datos" }).
             ko({ error: "error en la base de datos" });
         }
 
@@ -109,3 +125,65 @@ export function traerLibros(){
 }
 
 
+export function nuevoLibro(usuario_id,titulo,opinion,tematica,progreso,puntuacion){
+    
+    return new Promise(async (ok,ko) => {
+        
+        const conexion = conectar();
+        
+        try{
+            console.log("Intentando insertar un libro con los datos:", {
+                usuario_id,
+                titulo,
+                opinion,
+                tematica,
+                progreso,
+                puntuacion, 
+            });
+
+
+            let resultado = await conexion`INSERT INTO libros (usuario_id, titulo, opinion, tematica, progreso, puntuacion) VALUES (${usuario_id}, ${titulo}, ${opinion}, ${tematica}, ${progreso}, ${puntuacion}) 
+            RETURNING id`;
+
+            conexion.end();
+
+            console.log("Libro insertado con exito", resultado[0].id);
+            ok(resultado[0].id);
+        }catch(error){
+           
+            ko({ error: "error en la base de datos" });
+        }
+
+    });   
+}
+
+export function borrarLibro(id){
+   
+    return new Promise(async (ok,ko) => {
+ 
+        const conexion = conectar();
+   
+        try{
+         
+            let {count} = await conexion`DELETE FROM libros WHERE id = ${id}`;
+
+            conexion.end();
+
+            ok(count);
+        }catch(error){
+          
+            ko({ error: "error en la base de datos" });
+        }
+
+    });   
+}
+
+
+ /* checkUsuario("perita@perita.com")
+.then(x => console.log(x))
+.catch(x => console.log(x))   */ 
+
+/*  borrarLibro(24)
+.then(x => console.log(x))
+.catch(x => console.log(x))    
+ */
