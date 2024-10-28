@@ -103,7 +103,7 @@ export function registrarUsuario(nombre,email,hashedPassword){
 }
 
 
-export function traerLibros(){
+/* export function traerLibros(){
     return new Promise(async (ok,ko) => {
         
         const conexion = conectar();
@@ -122,7 +122,30 @@ export function traerLibros(){
         }
 
     });   
-}
+} */
+
+
+    export function traerLibros(usuario_id){
+        return new Promise(async (ok,ko) => {
+            
+            const conexion = conectar();
+           
+            try{
+                
+                let libros = await conexion`SELECT * FROM libros WHERE usuario_id = ${usuario_id}`;
+                
+                conexion.end();
+            
+                ok(libros);
+                console.log("se han traido los libros en función del usuario que ha iniciado sesión")
+    
+            }catch(error){
+                ko({ error: "error en la base de datos" });
+            }
+    
+        });   
+    }
+
 
 
 export function nuevoLibro(usuario_id,titulo,opinion,tematica,progreso,puntuacion){
@@ -178,12 +201,46 @@ export function borrarLibro(id){
     });   
 }
 
+export function actualizarLibro(id,elementosActualizados){
+    return new Promise(async (ok,ko) => {
+        
+        const conexion = conectar();
+        const actualizaciones = Object.keys(elementosActualizados);
+        const valores = Object.values(elementosActualizados);
+        try{
+           
+            if(!elementosActualizados || actualizaciones.length === 0){
+                return ok(false);
+            }
 
- /* checkUsuario("perita@perita.com")
-.then(x => console.log(x))
-.catch(x => console.log(x))   */ 
+            
 
-/*  borrarLibro(24)
-.then(x => console.log(x))
-.catch(x => console.log(x))    
- */
+            const setClause = actualizaciones.map((campo, index) => `${campo} = $${index + 1}`).join(", ");
+
+
+            valores.push(id);
+
+            console.log("Valores:", valores);
+
+            
+
+            
+            const resultado = await conexion.unsafe(`
+                UPDATE libros
+                SET ${setClause}
+                WHERE id = $${valores.length}
+              `, valores);
+
+            conexion.end();
+
+            ok(resultado.count > 0);
+
+        }catch(error){
+            console.error("Error al actualizar el libro en la base de datos:", error);
+            ko({ error: error.message || "error en la base de datos" });
+        }
+    });
+}
+
+
+ 
