@@ -146,6 +146,37 @@ export function registrarUsuario(nombre,email,hashedPassword){
         });   
     }
 
+        /* export function traerLibros(usuario_id,busqueda){
+            return new Promise(async (ok,ko) => {
+                
+                const conexion = conectar();
+
+               
+                try{
+
+                    let libros = [];
+                    
+                    let minusculaBusqueda = busqueda.toLowerCase();
+                       
+                    if(busqueda){
+                        libros= await conexion`SELECT * FROM libros WHERE usuario_id = ${usuario_id} AND LOWER(titulo) LIKE ${minusculaBusqueda}`;
+                    }else{
+                        libros = await conexion`SELECT * FROM libros WHERE usuario_id = ${usuario_id}`;
+                    }
+                    
+                    
+                    conexion.end();
+                
+                    ok(libros);
+                    console.log("se han traido los libros en función del usuario que ha iniciado sesión")
+        
+                }catch(error){
+                    ko({ error: "error en la base de datos" });
+                }
+        
+            });   
+        } */
+
 
 
 export function nuevoLibro(usuario_id,titulo,opinion,tematica,progreso,puntuacion){
