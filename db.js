@@ -41,6 +41,7 @@ function conectar(){
 }
 
 
+
 /**
  * traerUsuarios
  * 
@@ -143,6 +144,36 @@ export function registrarUsuario(nombre,email,hashedPassword){
 
 
 
+/**
+ * 
+ * librosTodos
+ * 
+ * Esta función asíncrona nos devuelve los libros de la tabla libros de la base de datos
+ * @returns {Promesa} Devuelve una promesa que se resuelve devolviendo un array con los libros, almacenados según usuario_id
+ */
+export function librosTodos(){
+    return new Promise(async (ok,ko) => {
+            
+            const conexion = conectar();
+           
+            try{
+                
+                let libros = await conexion`SELECT * FROM libros`;
+                
+                conexion.end();
+            
+                ok(libros);
+                console.log("se han traido los libros en función del usuario que ha iniciado sesión")
+    
+            }catch(error){
+                console.error("Error al traer los libros de la base de datos:", error);
+                ko({ error: error.message || "error en la base de datos" });
+
+            }
+    
+        });   
+    }
+
 
 /**
  * 
@@ -174,6 +205,9 @@ export function traerLibros(usuario_id){
     
         });   
     }
+
+
+
 
 
 

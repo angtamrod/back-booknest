@@ -21,7 +21,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import cors from "cors";
-import { traerLibros,nuevoLibro,borrarLibro,traerUsuarios,checkUsuario,registrarUsuario,actualizarLibro } from "./db.js";
+import { librosTodos,traerLibros,nuevoLibro,borrarLibro,traerUsuarios,checkUsuario,registrarUsuario,actualizarLibro } from "./db.js";
 
 dotenv.config();//Carga las variables de entorno desde el archivo.env
 
@@ -162,7 +162,7 @@ servidor.post("/api/login", async (peticion, respuesta,siguiente) => {
  */
 servidor.get("/api/libros", async (peticion,respuesta,siguiente) => {
     try{
-        let libros = await traerLibros();
+        let libros = await librosTodos();
         respuesta.json(libros);
     }catch(error){
         console.log(error);
